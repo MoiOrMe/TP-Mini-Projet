@@ -6,10 +6,12 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
+
 def Exercice_1():
     print("Exercice 1 : Work in progress")
     # Placeholder for future implementation
     pass
+
 
 def Exercice_2():
 # Lire le dataset iris en utilisant la méthode datasets.load_iris() de sklearn.datasets. Explorer ce dataset.
@@ -127,6 +129,7 @@ def Exercice_2():
 
     print("Affichage sur matplotlib terminé.\n")
 
+
 def Exercice_3():
 # Appliquez l’ACP aux données et affichez la décroissance des valeurs propres.
     print("1.")
@@ -171,10 +174,12 @@ def Exercice_3():
 
     print("Affichage sur matplotlib terminé.\n")
 
+
 def Exercice_4():
     print("Exercice 4 : Work in progress")
     # Placeholder for future implementation
     pass
+
 
 def ChoixExoTP1():
     choiceExo = -1
