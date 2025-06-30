@@ -1,7 +1,7 @@
 from sklearn.datasets import make_swiss_roll, make_moons, make_classification
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-import umap.umap_ as umap
+import umap
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
