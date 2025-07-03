@@ -160,11 +160,11 @@ def Exercice_3():
             plot_decision_boundary(rf, X_train, y_train, f"Random Forest (n_estimators={n}, max_depth={depth}) - Train")
 
     print("Comparer les scores aux précédents modèles :\n"
-          "\n"
+          "Alors, le KNN est d'après mes données, le meilleur modèel. Le KNN k=7 a une accuracy et un F1-score de 0.99, pour les arbres de décisions classiqeu on a maximum 0.97. La random forest est la seconde meilleure n terme de résultat, car on réussi à tapper le 0.98.\n"
           "Discuter de la stabilité et de la robustesse :\n"
-          "\n"
+          "Alors, dans la forêt on a une meilleur stabilité car on a plus d'arbre. Tandis que pour l'arbre tout seul, ses données vari trop facilement. La robustesse de la forête est aussi meilleure que celle de l'arbre, car elle a plus de données et donc moins ded variance\n"
           "Montrer l'effet d'agrégation des arbres :\n"
-          "\n")
+          "Ca réduit la variance, ça garde une forme similaire à un arbre et ça donne un modèle robuste, stable et performant\n")
 
 
 def Exercice_4():
