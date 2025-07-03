@@ -93,13 +93,13 @@ def Exercice_2():
     plt.show()
 # Question
     print("1. Quel est le rôle de la distance euclidienne dans ces méthodes ?\n"
-          "\n"
+          "C'est de mesurer la similarité entre les points. Si deux points sont proche, ils sont considéré comme similaire et sont alors regroupé.\n"
           "2. En quoi la PCA facilite-t-elle le clustering visuel ?\n"
-          "\n"
+          "PCA réduit la dimension des données tout en conservant un maximum de variance. Dans notre cas ici, on est passé de la dimension 64 à 2.\n"
           "3. Quels sont les cas d'usage typiques du clustering dans les systèmes de vision par ordinateur ?\n"
-          "\n"
+          "Alors, il y a la segmentation d'images qui permet de regrouper les pixels similaire en région, il y a aussi le prétraitement pour l'apprentissage supervisé qui réduis la compléxité. Enfaite, le clustering ça sert partout où il faut regrouper sans label.\n"
           "4. Peut-on utiliser ces clusters comme pseudo-labels ? Pourquoi ?\n"
-          "\n")
+          "C'est possible, lors de l'absence de vrai label, les cluster peuvent être considéré comme pseudo-label afin d'entrainer des modèles suppervisés.\n")
 
 
 def ChoixExoTP4():
