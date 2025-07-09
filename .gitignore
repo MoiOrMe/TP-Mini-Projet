@@ -26,7 +26,9 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-kaggle/*
+kaggle/images/*
+kaggle/labels/*
+kaggle/labels2/*
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
