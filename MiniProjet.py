@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+import os
 
 
 def compute_iou(boxA, boxB):
@@ -61,30 +62,49 @@ def Partie_1():
     # Evaluer les performances de cette approche de détection sur un dataset de détection de visage public. Vous pouver utiliser le dataset suivant Kaggle Face Detection Dataset. (Obligatoire - Utiliser au moins la métrique IoU)
     print("Évaluation des performances de la détection de visage sur un dataset public.")
 
-    dataset = [
-        {'image': 'image1.jpg', 'gt_box': [50, 60, 100, 120]},
-        {'image': 'image2.jpg', 'gt_box': [30, 40, 80, 90]},
-        # ajouter d'autres images de ton dataset
-    ]
+    images_folder = "kaggle/images/val"
+    images_folder2 = "kaggle/images/train"
+    labels2_folder = "kaggle/labels2"
 
     ious = []
+    for label_file in os.listdir(labels2_folder):
+        if not label_file.endswith(".txt"):
+            continue
 
-    for data in dataset:
-        img = cv2.imread(data['image'])
+        image_name = label_file.replace(".txt", ".jpg")
+        image_path = os.path.join(images_folder, image_name)
+        if image_path is None or not os.path.exists(image_path):
+            image_path = os.path.join(images_folder2, image_name)
+        label_path = os.path.join(labels2_folder, label_file)
+
+        img = cv2.imread(image_path)
+        if img is None:
+            continue
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        gt_box = data['gt_box']
+
+        gt_boxes = []
+        with open(label_path, "r") as f:
+            lines = f.readlines()
+            for line in lines:
+                parts = line.strip().split()
+                if len(parts) == 5 and parts[0] == "Human":
+                    x_min = float(parts[1])
+                    y_min = float(parts[2])
+                    x_max = float(parts[3])
+                    y_max = float(parts[4])
+                    w = x_max - x_min
+                    h = y_max - y_min
+                    gt_boxes.append([x_min, y_min, w, h])
 
         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
-
-        if len(faces) > 0:
-            # on prend la première prédiction comme exemple
-            pred_box = faces[0]
-            iou = compute_iou(gt_box, pred_box)
-            ious.append(iou)
-            print(f"Image: {data['image']} | IoU: {iou:.2f}")
-        else:
-            print(f"Image: {data['image']} | Aucun visage détecté.")
-            ious.append(0)
+        
+        for gt_box in gt_boxes:
+            max_iou = 0
+            for pred_box in faces:
+                iou = compute_iou(gt_box, pred_box)
+                max_iou = max(max_iou, iou)
+            ious.append(max_iou)
+            print(f"{image_name} | IoU: {max_iou:.2f}")
 
     if ious:
         mean_iou = np.mean(ious)
