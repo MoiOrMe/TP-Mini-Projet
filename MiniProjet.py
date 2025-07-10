@@ -76,6 +76,7 @@ def Partie_1():
         if image_path is None or not os.path.exists(image_path):
             image_path = os.path.join(images_folder2, image_name)
         label_path = os.path.join(labels2_folder, label_file)
+        print(f"Traitement de l'image : {image_name}")
 
         img = cv2.imread(image_path)
         if img is None:
@@ -87,16 +88,18 @@ def Partie_1():
             lines = f.readlines()
             for line in lines:
                 parts = line.strip().split()
-                if len(parts) == 5 and parts[0] == "Human":
-                    x_min = float(parts[1])
-                    y_min = float(parts[2])
-                    x_max = float(parts[3])
-                    y_max = float(parts[4])
+                if len(parts) == 6 and parts[0] == "Human":
+                    x_min = float(parts[2])
+                    y_min = float(parts[3])
+                    x_max = float(parts[4])
+                    y_max = float(parts[5])
                     w = x_max - x_min
                     h = y_max - y_min
                     gt_boxes.append([x_min, y_min, w, h])
 
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+        print("Lecture des boîtes englobantes GT :", gt_boxes)
+
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=7)
         
         for gt_box in gt_boxes:
             max_iou = 0
