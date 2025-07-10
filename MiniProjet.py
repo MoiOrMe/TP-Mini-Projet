@@ -113,6 +113,9 @@ def Partie_1():
         mean_iou = np.mean(ious)
         print(f"Mean IoU sur le dataset : {mean_iou:.2f}")
 
+    print("Interpréter les résultats obtenus.\n" \
+          "Pour l'insatnt , la moyenne des IoU est de {:.2f}. Donc on peut en déduire que la précison de notre modèle Haar n'est pas encore optimal, faudrais modifié et tester de nouveaux paramètres afin d'optimiser la détection des visages." )
+
 
 def Partie_2():
     print("Lancement de la Partie 2 du Mini-Projet : Détection et reconnaissance faciale avec apprentissage profond.")
