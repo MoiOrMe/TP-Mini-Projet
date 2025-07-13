@@ -1,7 +1,39 @@
 import numpy as np
+from sklearn.datasets import fetch_lfw_people
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, accuracy_score
+from skimage.feature import hog
+from skimage import color, io
 import matplotlib.pyplot as plt
 import cv2
 import os
+
+
+def calculer_HOG(image_path):
+    image = io.imread(image_path)
+    image = image / 255.0
+    
+    if len(image.shape) == 3:
+        image = color.rgb2gray(image)
+
+    fd, hog_image = hog(image, orientations=12, pixels_per_cell=(4,4),
+                        cells_per_block=(2,2), block_norm='L2-Hys',
+                        visualize=True)
+
+    plt.subplot(1,2,2)
+    plt.imshow(hog_image, cmap='gray')
+    plt.title('Image HOG')
+    plt.axis('off')
+
+    plt.show()
+
+    print(f"Vecteur de caractéristiques HOG calculé. Taille : {fd.shape}")
+    return fd
 
 
 def compute_iou(boxA, boxB):
@@ -99,7 +131,7 @@ def Partie_1():
 
         print("Lecture des boîtes englobantes GT :", gt_boxes)
 
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=7)
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.05, minNeighbors=3)
         
         for gt_box in gt_boxes:
             max_iou = 0
@@ -114,12 +146,91 @@ def Partie_1():
         print(f"Mean IoU sur le dataset : {mean_iou:.2f}")
 
     print("Interpréter les résultats obtenus.\n" \
-          "Pour l'insatnt , la moyenne des IoU est de {:.2f}. Donc on peut en déduire que la précison de notre modèle Haar n'est pas encore optimal, faudrais modifié et tester de nouveaux paramètres afin d'optimiser la détection des visages." )
+          "Dans un premier test, la moyenne des IoU était de 0.27. Donc on peut en déduire que la précison de notre modèle Haar n'était pas encore optimal et qu'il fallait modifier et tester de nouveaux paramètres. Le scaleFactor à 1.1 et le minNeighbors à 7\n" \
+          "Dans le suivant, on à réussi à pervenir à une moyenne des IoU du dataset à 0.35. Le scaleFactor à 1.05 et le minNeighbors à 3." )
 
 
 def Partie_2():
-    print("Lancement de la Partie 2 du Mini-Projet : Détection et reconnaissance faciale avec apprentissage profond.")
-    # Ici, vous pouvez ajouter le code spécifique pour la Partie 2
+    lfw_people = fetch_lfw_people(min_faces_per_person=70, resize=0.4)
+    X = lfw_people.data
+    y = lfw_people.target
+    target_names = lfw_people.target_names
+    
+    print("Ecrire un programme Python permettant de reconnaitre un visage en utilisant l'ACP.")
+    print("=== PCA + KNN ===")
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.3, random_state=42, stratify=y)
+
+    n_components = 150
+    pca = PCA(n_components=n_components, whiten=True, random_state=42)
+    X_train_pca = pca.fit_transform(X_train)
+    X_test_pca = pca.transform(X_test)
+
+    knn = KNeighborsClassifier(n_neighbors=5)
+    knn.fit(X_train_pca, y_train)
+
+    y_pred = knn.predict(X_test_pca)
+
+    acc = accuracy_score(y_test, y_pred)
+    print(f"Précision (Accuracy) du modèle PCA + KNN : {acc:.2f}")
+
+    print("Rapport de classification :")
+    print(classification_report(y_test, y_pred, target_names=target_names, zero_division=0))
+
+    plt.imshow(X_test[0].reshape(lfw_people.images.shape[1:]), cmap='gray')
+    plt.title(f"Vérité : {target_names[y_test[0]]} | Prédit : {target_names[y_pred[0]]}")
+    plt.axis('off')
+    plt.show()
+
+    print("Ecrire un programme Python permettant de calculer les caractéristiques de HOG d'une image.")
+    image_test_path = 'visage.jpg'
+    hog_features = calculer_HOG(image_test_path)
+
+    print("Ecrire un programme Python permettant de reconnaitre un visage en utilisant les descripteurs de HOG et les classifieurs arbre de décision et RandomForest. Ainsi, on distingue deux méthodes : HOG + Decision Tree et HOG + Random Forest.")
+    print("=== HOG + Decision Tree ===")
+    hog_features_list = []
+    for img in lfw_people.images:
+        image = img / 255.0
+        fd = hog(image, orientations=12, pixels_per_cell=(4,4),
+                cells_per_block=(2,2), block_norm='L2-Hys')
+        hog_features_list.append(fd)
+
+    X_hog = np.array(hog_features_list)
+    
+    X_train_hog, X_test_hog, y_train_hog, y_test_hog = train_test_split(X_hog, y, test_size=0.3, random_state=42, stratify=y)
+
+    dt = DecisionTreeClassifier(max_depth=30, random_state=42)
+    dt.fit(X_train_hog, y_train_hog)
+
+    y_pred_dt = dt.predict(X_test_hog)
+
+    acc_dt = accuracy_score(y_test_hog, y_pred_dt)
+    print(f"Précision (Accuracy) du modèle HOG + Decision Tree : {acc_dt:.2f}")
+
+    print("Rapport de classification (Decision Tree) :")
+    print(classification_report(y_test_hog, y_pred_dt, target_names=target_names, zero_division=0))
+
+    print("=== HOG + Random Forest ===")
+    rf = RandomForestClassifier(n_estimators=200, max_depth=30, max_features='sqrt', random_state=42)
+    rf.fit(X_train_hog, y_train_hog)
+
+    y_pred_rf = rf.predict(X_test_hog)
+
+    acc_rf = accuracy_score(y_test_hog, y_pred_rf)
+    print(f"Précision (Accuracy) du modèle HOG + Random Forest : {acc_rf:.2f}")
+
+    print("Rapport de classification (Random Forest) :")
+    print(classification_report(y_test_hog, y_pred_rf, target_names=target_names, zero_division=0))
+
+    print("Ecrire un programme Python permettant de reconnaitre un visage en utilisant une architecture CNN.")
+    print("Malheureusement, on ne pourra pas implémenter le CNN car Tensorflow et PyTorch ne sont pas disponible pour Python 3.13.3, la version actuellement utilisée pour ce projet.")
+
+    print("Evaluer les performances de chaque méthode sur un dataset de détection de visage public.")
+
+    print("Interpréter les résultats obtenus.")
 
 
 def ChoixMiniProjet() :
