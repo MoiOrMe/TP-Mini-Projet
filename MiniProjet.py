@@ -169,11 +169,13 @@ def Partie_2():
 
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.3, random_state=42, stratify=y)
 
+    # n_components = 150 car c'est une bonne moyenne entre performance et précision parceque c'est assez pour capturer assez de variance et permettre de réduire la dimensionnalité.
     n_components = 150
     pca = PCA(n_components=n_components, whiten=True, random_state=42)
     X_train_pca = pca.fit_transform(X_train)
     X_test_pca = pca.transform(X_test)
 
+    # n_neighbors = 5 car c'est un valeur classique pour KNN qui permet de capturer la structure locale des données sans être trop sensible au bruit.
     knn = KNeighborsClassifier(n_neighbors=5)
     knn.fit(X_train_pca, y_train)
 
@@ -194,6 +196,7 @@ def Partie_2():
     hog_features_list = []
     for img in lfw_people.images:
         image = img / 255.0
+        # Ici le choix des hyperparamètres a été fait avec plusieurs tests. C'est les meilleurs que l'on ai pu trouver.
         fd = hog(image, orientations=12, pixels_per_cell=(4,4),
                 cells_per_block=(2,2), block_norm='L2-Hys')
         hog_features_list.append(fd)
@@ -202,6 +205,7 @@ def Partie_2():
     
     X_train_hog, X_test_hog, y_train_hog, y_test_hog = train_test_split(X_hog, y, test_size=0.3, random_state=42, stratify=y)
 
+    # max_depth = 30 car c'est une valeur qui permet de limiter l'arbre et d'éviter l'overfitting.
     dt = DecisionTreeClassifier(max_depth=30, random_state=42)
     dt.fit(X_train_hog, y_train_hog)
 
@@ -214,7 +218,8 @@ def Partie_2():
     print(classification_report(y_test_hog, y_pred_dt, target_names=target_names, zero_division=0))
 
     print("\n=== HOG + Random Forest ===")
-    rf = RandomForestClassifier(n_estimators=200, max_depth=30, max_features='sqrt', random_state=42)
+    # n_estimators = 100 et max_depth = 30 car aller au delà de ces valeurs n'apporte pas de gain significatif en performance et augmente le temps de calcul.
+    rf = RandomForestClassifier(n_estimators=100, max_depth=30, max_features='sqrt', random_state=42)
     rf.fit(X_train_hog, y_train_hog)
 
     y_pred_rf = rf.predict(X_test_hog)
@@ -234,6 +239,7 @@ def Partie_2():
     X_train_cnn, X_test_cnn, y_train_cnn, y_test_cnn = train_test_split(X_cnn, y_cnn, test_size=0.3, random_state=42, stratify=y)
 
     model = Sequential()
+    # Les 3 Conv2D permette au modèle d'apprendre différent niveaux de caractéristiques, le kernel (3, 3) est la taille standart.
     model.add(Conv2D(32, (3,3), activation='relu', input_shape=X_train_cnn.shape[1:]))
     model.add(BatchNormalization())
     model.add(MaxPooling2D((2,2)))
@@ -245,11 +251,13 @@ def Partie_2():
     model.add(MaxPooling2D((2,2)))
     model.add(Flatten())
     model.add(Dense(256, activation='relu'))
+    # Ici un Dropout trop élevé nuit au modèle car il perd trop d'informations. 0.2 est la meilleure valeur qu'on ai trouvé pour presque constamment arrivé au 90% de précision.
     model.add(Dropout(0.2))
     model.add(Dense(y_cnn.shape[1], activation='softmax'))
 
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
+    # 50 epochs ne prend pas trop de temps à se faire et permet d'obtenir un résultat satisfaisant
     model.fit(X_train_cnn, y_train_cnn, epochs=50, batch_size=32, validation_split=0.2)
 
     loss, acc_cnn = model.evaluate(X_test_cnn, y_test_cnn)
@@ -259,7 +267,12 @@ def Partie_2():
     df_results = pd.DataFrame(results, columns=['Méthode', 'Accuracy'])
     print(df_results.to_string(index=False))
 
-    print("\nConsigne :\nInterpréter les résultats obtenus.")
+    print("\nInterprétation des résultats :\n"
+        "\n- PCA + KNN : Méthode rapide avec une précision correcte. Elle est adaptée à des datasets simples mais limitée pour des données à forte variabilité faciale.\n"
+        "\n- HOG + Decision Tree : Moins performant en raison d’un risque d’overfitting et d’une capacité générale plus faible.\n"
+        "\n- HOG + Random Forest : Meilleur que Decision Tree seul grâce à la combinaison d’arbres, mais reste limité par la qualité du descripteur HOG qui se base sur les gradients et peut échouer sur des visages peu texturés.\n"
+        "\n- CNN : Meilleure précision grâce à l’apprentissage automatique de caractéristiques complexes à partir des images. Cependant, il requiert plus de données et de puissance de calcul. Pour améliorer davantage sa performance, il faudrait augmenter la taille du dataset, optimiser l’architecture et utiliser la régularisation (Dropout, Data Augmentation, EarlyStopping) pour éviter l’overfitting."
+        )
 
 
 def ChoixMiniProjet() :
