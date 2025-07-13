@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from sklearn.datasets import fetch_lfw_people
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
@@ -9,6 +10,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
 from skimage.feature import hog
 from skimage import color, io
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.utils import to_categorical
 import matplotlib.pyplot as plt
 import cv2
 import os
@@ -155,9 +160,9 @@ def Partie_2():
     X = lfw_people.data
     y = lfw_people.target
     target_names = lfw_people.target_names
+    results = []
     
-    print("Ecrire un programme Python permettant de reconnaitre un visage en utilisant l'ACP.")
-    print("=== PCA + KNN ===")
+    print("\n=== PCA + KNN ===")
 
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
@@ -174,8 +179,8 @@ def Partie_2():
 
     y_pred = knn.predict(X_test_pca)
 
-    acc = accuracy_score(y_test, y_pred)
-    print(f"Précision (Accuracy) du modèle PCA + KNN : {acc:.2f}")
+    acc_pca_knn = accuracy_score(y_test, y_pred)
+    results.append(['PCA + KNN', acc_pca_knn])
 
     print("Rapport de classification :")
     print(classification_report(y_test, y_pred, target_names=target_names, zero_division=0))
@@ -185,12 +190,7 @@ def Partie_2():
     plt.axis('off')
     plt.show()
 
-    print("Ecrire un programme Python permettant de calculer les caractéristiques de HOG d'une image.")
-    image_test_path = 'visage.jpg'
-    hog_features = calculer_HOG(image_test_path)
-
-    print("Ecrire un programme Python permettant de reconnaitre un visage en utilisant les descripteurs de HOG et les classifieurs arbre de décision et RandomForest. Ainsi, on distingue deux méthodes : HOG + Decision Tree et HOG + Random Forest.")
-    print("=== HOG + Decision Tree ===")
+    print("\n=== HOG + Decision Tree ===")
     hog_features_list = []
     for img in lfw_people.images:
         image = img / 255.0
@@ -208,29 +208,58 @@ def Partie_2():
     y_pred_dt = dt.predict(X_test_hog)
 
     acc_dt = accuracy_score(y_test_hog, y_pred_dt)
-    print(f"Précision (Accuracy) du modèle HOG + Decision Tree : {acc_dt:.2f}")
+    results.append(['HOG + Decision Tree', acc_dt])
 
     print("Rapport de classification (Decision Tree) :")
     print(classification_report(y_test_hog, y_pred_dt, target_names=target_names, zero_division=0))
 
-    print("=== HOG + Random Forest ===")
+    print("\n=== HOG + Random Forest ===")
     rf = RandomForestClassifier(n_estimators=200, max_depth=30, max_features='sqrt', random_state=42)
     rf.fit(X_train_hog, y_train_hog)
 
     y_pred_rf = rf.predict(X_test_hog)
 
     acc_rf = accuracy_score(y_test_hog, y_pred_rf)
-    print(f"Précision (Accuracy) du modèle HOG + Random Forest : {acc_rf:.2f}")
+    results.append(['HOG + Random Forest', acc_rf])
 
     print("Rapport de classification (Random Forest) :")
     print(classification_report(y_test_hog, y_pred_rf, target_names=target_names, zero_division=0))
 
-    print("Ecrire un programme Python permettant de reconnaitre un visage en utilisant une architecture CNN.")
-    print("Malheureusement, on ne pourra pas implémenter le CNN car Tensorflow et PyTorch ne sont pas disponible pour Python 3.13.3, la version actuellement utilisée pour ce projet.")
+    print("\n=== CNN ===")
+    X_cnn = lfw_people.images / 255.0
+    y_cnn = to_categorical(y)
 
-    print("Evaluer les performances de chaque méthode sur un dataset de détection de visage public.")
+    X_cnn = X_cnn.reshape((-1, X_cnn.shape[1], X_cnn.shape[2], 1))
 
-    print("Interpréter les résultats obtenus.")
+    X_train_cnn, X_test_cnn, y_train_cnn, y_test_cnn = train_test_split(X_cnn, y_cnn, test_size=0.3, random_state=42, stratify=y)
+
+    model = Sequential()
+    model.add(Conv2D(32, (3,3), activation='relu', input_shape=X_train_cnn.shape[1:]))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D((2,2)))
+    model.add(Conv2D(64, (3,3), activation='relu'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D((2,2)))
+    model.add(Conv2D(128, (3,3), activation='relu'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D((2,2)))
+    model.add(Flatten())
+    model.add(Dense(256, activation='relu'))
+    model.add(Dropout(0.2))
+    model.add(Dense(y_cnn.shape[1], activation='softmax'))
+
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+    model.fit(X_train_cnn, y_train_cnn, epochs=50, batch_size=32, validation_split=0.2)
+
+    loss, acc_cnn = model.evaluate(X_test_cnn, y_test_cnn)
+    results.append(['CNN', acc_cnn])
+
+    print("\n=== Tableau récapitulatif des performances ===")
+    df_results = pd.DataFrame(results, columns=['Méthode', 'Accuracy'])
+    print(df_results.to_string(index=False))
+
+    print("\nConsigne :\nInterpréter les résultats obtenus.")
 
 
 def ChoixMiniProjet() :
